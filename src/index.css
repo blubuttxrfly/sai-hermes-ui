@@ -1,0 +1,310 @@
+@font-face {
+  font-family: "Alice";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/Alice-Regular.ttf") format("truetype");
+}
+
+:root {
+  /* Sanctuary Gold-Purple */
+  --bg: #0B0B14;
+  --bg-elevated: rgba(108, 93, 211, 0.07);
+  --gold: #FFD66B;
+  --gold-light: #FFF0BD;
+  --purple: #6C5DD3;
+  --purple-dark: #4B3FB8;
+  --purple-glow: rgba(108, 93, 211, 0.25);
+  --text: #F0E6D8;
+  --text-muted: rgba(240, 230, 216, 0.55);
+  --border: rgba(255, 214, 107, 0.15);
+  --user-bubble: rgba(255, 214, 107, 0.10);
+  --assistant-bubble: rgba(75, 145, 241, 0.12);
+  --assistant-border: rgba(75, 145, 241, 0.30);
+  --input-bg: rgba(108, 93, 211, 0.08);
+  --accent-blue: #4B91F1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Alice", Georgia, "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.sanctuary-app {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ---------- Chat Header ---------- */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.menu-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+}
+
+.header-title {
+  flex: 1;
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+}
+
+.header-sigil {
+  width: 32px;
+  height: 32px;
+}
+
+/* ---------- Messages Area ---------- */
+.messages-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  padding-bottom: calc(1rem + 80px);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  scroll-behavior: smooth;
+}
+
+/* User bubble — right side, gold-tinted */
+.msg-row-user {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.msg-bubble-user {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 18px 18px 4px 18px;
+  background: var(--user-bubble);
+  border: 1px solid rgba(255, 214, 107, 0.20);
+  color: var(--gold-light);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* Assistant bubble — left side, blue-tinted */
+.msg-row-assistant {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.msg-bubble-assistant {
+  max-width: 85%;
+  padding: 0.75rem 1rem;
+  border-radius: 18px 18px 18px 4px;
+  background: var(--assistant-bubble);
+  border: 1px solid var(--assistant-border);
+  color: var(--text);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+/* Blue streaming block inside assistant bubble */
+.streaming-block {
+  background: rgba(75, 145, 241, 0.18);
+  border: 1px solid rgba(75, 145, 241, 0.35);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  margin: 0.4rem 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.streaming-block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(75, 145, 241, 0.15),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* ---------- Input Area ---------- */
+.input-area {
+  position: fixed;
+  bottom: 72px;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 0.75rem;
+  padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+  z-index: 20;
+}
+
+.input-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.input-action-btn {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 12px;
+  background: var(--input-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  font-size: 1.1rem;
+}
+
+.chat-textarea {
+  flex: 1;
+  min-height: 40px;
+  max-height: 120px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: none;
+  outline: none;
+}
+
+.chat-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.send-btn {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 12px var(--purple-glow);
+}
+
+/* ---------- Bottom Nav ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(11, 11, 20, 0.95);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 30;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  flex: 1;
+  height: 100%;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  transition: color 0.2s ease;
+}
+
+.nav-item.active {
+  color: var(--gold);
+}
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Scrollbar hide */
+.messages-scroll::-webkit-scrollbar {
+  display: none;
+}
+.messages-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Typing indicator */
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding: 0.3rem 0;
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-blue);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
