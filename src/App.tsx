@@ -320,8 +320,16 @@ export default function App() {
         setConnStatus("ready");
         setErrorMsg(null);
 
-        /* Resume or create session */
+        /* Resume or create session — auto-heal stale sessions */
         let sessionId = sessionRef.current;
+        if (sessionId) {
+          /* Ping to validate; if stale, backend will error */
+          try {
+            await gw.request("session.ping", { session_id: sessionId });
+          } catch {
+            sessionId = null; /* stale — force new */
+          }
+        }
         if (!sessionId) {
           const res = await gw.request<{ session_id: string }>("session.create");
           sessionId = res.session_id;
@@ -382,15 +390,18 @@ export default function App() {
   }, []);
 
   /* ---------------------------------------------------------------- */
-  /*  SEND MESSAGE                                                     */
+  /*  SEND MESSAGE — with stale-session auto-heal                      */
   /* ---------------------------------------------------------------- */
   const handleSend = useCallback(
     async (text: string) => {
       const gw = gwRef.current;
       if (!gw || gw.state !== "open") { setErrorMsg("Not connected to Hermes"); return; }
 
-      const sessionId = sessionRef.current;
-      if (!sessionId) { setErrorMsg("No active session"); return; }
+      let sessionId = sessionRef.current;
+
+      const doSubmit = async (sid: string) => {
+        await gw!.request("prompt.submit", { session_id: sid, text });
+      };
 
       const userMsg: Message = { id: uid(), role: "user", content: text, timestamp: Date.now() };
       setMessages((prev) => [...prev, userMsg]);
@@ -398,9 +409,33 @@ export default function App() {
       setErrorMsg(null);
 
       try {
-        await gw.request("prompt.submit", { session_id: sessionId, text });
-      } catch (err) {
-        setErrorMsg(err instanceof Error ? err.message : String(err));
+        if (!sessionId) {
+          const res = await gw.request<{ session_id: string }>("session.create");
+          sessionId = res.session_id;
+          sessionRef.current = sessionId;
+          saveSession(sessionId);
+        }
+        await doSubmit(sessionId);
+      } catch (err: any) {
+        const msg = err?.message ?? String(err);
+        if (msg.includes("session") && (msg.includes("not found") || msg.includes("invalid"))) {
+          /* Stale session — heal automatically */
+          try { localStorage.removeItem(SESS_KEY); } catch {}
+          sessionRef.current = null;
+          try {
+            const res = await gw.request<{ session_id: string }>("session.create");
+            sessionId = res.session_id;
+            sessionRef.current = sessionId;
+            saveSession(sessionId);
+            await doSubmit(sessionId);
+            return; /* success after heal */
+          } catch (err2) {
+            setErrorMsg(err2 instanceof Error ? err2.message : String(err2));
+            setIsSending(false);
+            return;
+          }
+        }
+        setErrorMsg(msg);
         setIsSending(false);
       }
     },
