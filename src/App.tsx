@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Menu,
+  X,
   Settings,
   Search,
   Send,
@@ -17,7 +18,7 @@ interface Message {
   content: string;
   timestamp: number;
   streaming?: boolean;
-  image?: string; // data URL
+  image?: string;
 }
 
 /* ================================================================= */
@@ -44,28 +45,89 @@ function saveMessages(msgs: Message[]) {
   }
 }
 
-/* ================================================================= */
-/*  UNIQUE ID                                                      */
-/* ================================================================= */
 function uid() {
   return Math.random().toString(36).slice(2, 11);
 }
 
 /* ================================================================= */
+/*  DRAWER COMPONENT                                                 */
+/* ================================================================= */
+function Drawer({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  /* Mock sessions — in real app these load from /api/sessions */
+  const sessions = [
+    { id: "1", title: "Sanctuary Welcome", date: "Today" },
+    { id: "2", title: "Hermes Setup", date: "Today" },
+    { id: "3", title: "Atlas Island Plans", date: "Yesterday" },
+  ];
+
+  return (
+    <>
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="drawer-overlay"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Panel */}
+      <aside className={`drawer-panel ${open ? "open" : ""}`}>
+        <div className="drawer-header">
+          <span className="drawer-title">Menu</span>
+          <button className="drawer-close" onClick={onClose} aria-label="Close">
+            <X size={20} />
+          </button>
+        </div>
+
+        <nav className="drawer-nav">
+          <a href="#chat" className="drawer-link active" onClick={onClose}>
+            <MessageCircle size={18} />
+            <span>Chat</span>
+          </a>
+          <a href="#search" className="drawer-link" onClick={onClose}>
+            <Search size={18} />
+            <span>Search Sessions</span>
+          </a>
+          <a href="#settings" className="drawer-link" onClick={onClose}>
+            <Settings size={18} />
+            <span>Settings</span>
+          </a>
+        </nav>
+
+        <div className="drawer-divider" />
+
+        <div className="drawer-section-title">Sessions</div>
+        <ul className="drawer-sessions">
+          {sessions.map((s) => (
+            <li key={s.id} className="drawer-session">
+              <div className="session-title">{s.title}</div>
+              <div className="session-date">{s.date}</div>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    </>
+  );
+}
+
+/* ================================================================= */
 /*  CHAT HEADER                                                      */
 /* ================================================================= */
-function ChatHeader() {
+function ChatHeader({ onMenu }: { onMenu: () => void }) {
   return (
     <header className="chat-header">
-      <button className="menu-btn" aria-label="Menu">
+      <button className="menu-btn" onClick={onMenu} aria-label="Menu">
         <Menu size={20} />
       </button>
       <span className="header-title">SAI Hermes ☤</span>
-      <img
-        src="/images/SAI.png"
-        alt="SAI sigil"
-        className="header-sigil"
-      />
+      <img src="/images/SAI.png" alt="SAI sigil" className="header-sigil" />
     </header>
   );
 }
@@ -82,16 +144,10 @@ function UserBubble({ content }: { content: string }) {
 }
 
 function StreamingBlock({ content }: { content: string }) {
-  return (
-    <div className="streaming-block">
-      {content}
-    </div>
-  );
+  return <div className="streaming-block">{content}</div>;
 }
 
 function AssistantBubble({ msg }: { msg: Message }) {
-  /* If the content contains triple backticks, wrap those sections in
-     the blue streaming block.  This is a heuristic for "agent thinks" */
   const parts = msg.content.split(/(```[\s\S]*?```)/g);
   return (
     <div className="msg-row-assistant">
@@ -110,17 +166,22 @@ function AssistantBubble({ msg }: { msg: Message }) {
           />
         )}
         {parts.map((part, i) =>
-          part.startsWith("```")&&part.endsWith("```")
-            ? <StreamingBlock key={i} content={part.slice(3, -3)} />
-            : <span key={i}>{part}</span>
+          part.startsWith("```") && part.endsWith("```") ? (
+            <StreamingBlock key={i} content={part.slice(3, -3)} />
+          ) : (
+            <span key={i}>{part}</span>
+          )
         )}
         {msg.streaming && (
           <div className="typing-indicator">
-            <span /><span /><span />
+            <span />
+            <span />
+            <span />
           </div>
         )}
       </div>
-    </div>);
+    </div>
+  );
 }
 
 /* ================================================================= */
@@ -159,7 +220,6 @@ function ChatInput({
     e.target.value = "";
   };
 
-  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -172,21 +232,11 @@ function ChatInput({
       <div className="input-actions">
         <label className="input-action-btn">
           <ImageIcon size={18} />
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={handleFileChange}
-          />
+          <input type="file" accept="image/*" hidden onChange={handleFileChange} />
         </label>
         <label className="input-action-btn">
           <FileText size={18} />
-          <input
-            type="file"
-            accept="*/*"
-            hidden
-            onChange={handleFileChange}
-          />
+          <input type="file" accept="*/*" hidden onChange={handleFileChange} />
         </label>
       </div>
 
@@ -213,40 +263,12 @@ function ChatInput({
 }
 
 /* ================================================================= */
-/*  BOTTOM NAV                                                       */
-/* ================================================================= */
-type Screen = "chat" | "search" | "settings";
-
-function BottomNav({ active }: { active: Screen }) {
-  const items: { key: Screen; label: string; Icon: typeof MessageCircle }[] = [
-    { key: "chat", label: "Chat", Icon: MessageCircle },
-    { key: "search", label: "Search", Icon: Search },
-    { key: "settings", label: "Settings", Icon: Settings },
-  ];
-
-  /* This is a no-op nav — real routing not needed for MVP */
-  return (
-    <nav className="bottom-nav">
-      {items.map(({ key, label, Icon }) => (
-        <a
-          key={key}
-          href={`#${key}`}
-          className={`nav-item ${active === key ? "active" : ""}`}
-        >
-          <Icon size={22} />
-          <span>{label}</span>
-        </a>
-      ))}
-    </nav>
-  );
-}
-
-/* ================================================================= */
 /*  MAIN APP                                                         */
 /* ================================================================= */
 export default function App() {
   const [messages, setMessages] = useState<Message[]>(loadMessages);
   const [isSending, setIsSending] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
@@ -259,7 +281,6 @@ export default function App() {
     scrollToBottom();
   }, [messages]);
 
-  /* ---------------------------------------------------------------- */
   const handleSend = useCallback(
     async (text: string) => {
       const userMsg: Message = {
@@ -281,21 +302,20 @@ export default function App() {
       setIsSending(true);
 
       try {
-        /* ------------------------------------------------------ */
-        /*  Send to Hermes backend via REST (POST /api/message     */
-        /*  if it exists, else echo for demo)                      */
-        /* ------------------------------------------------------ */
-        const response = await fetch("http://192.168.1.1:9119/api/message", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: text }),
-        });
+        const response = await fetch(
+          "http://192.168.1.1:9119/api/message",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text }),
+          }
+        );
 
         if (!response.ok) throw new Error("HTTP " + response.status);
         const data = await response.json();
 
-        let replyText = data?.reply ?? data?.message ?? data?.content ?? "";
-        /* Fallback — simulate streaming if backend not reachable */
+        let replyText =
+          data?.reply ?? data?.message ?? data?.content ?? "";
         if (!replyText) throw new Error("No reply field");
 
         setMessages((prev) =>
@@ -305,8 +325,7 @@ export default function App() {
               : m
           )
         );
-      } catch (err) {
-        /* -------------- DEMO / FALLBACK STREAMING -------------- */
+      } catch {
         const demoReply = `Echo: ${text}`;
         await new Promise((r) => setTimeout(r, 600));
         setMessages((prev) =>
@@ -323,39 +342,57 @@ export default function App() {
     []
   );
 
-  /* ---------------------------------------------------------------- */
-  const handleFile = useCallback(
-    (file: File) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target?.result as string;
-        const userMsg: Message = {
-          id: uid(),
-          role: "user",
-          content: `[${file.name}]`,
-          image: dataUrl,
-          timestamp: Date.now(),
-        };
-        setMessages((prev) => [...prev, userMsg]);
+  const handleFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result as string;
+      const userMsg: Message = {
+        id: uid(),
+        role: "user",
+        content: `[${file.name}]`,
+        image: dataUrl,
+        timestamp: Date.now(),
       };
-      reader.readAsDataURL(file);
-    },
-    []
-  );
+      setMessages((prev) => [...prev, userMsg]);
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
-  /* ---------------------------------------------------------------- */
   return (
     <div className="sanctuary-app">
-      <ChatHeader />
+      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <ChatHeader onMenu={() => setDrawerOpen(true)} />
 
       <div className="messages-scroll" ref={scrollRef}>
         {messages.length === 0 && (
-          <div style={{ textAlign: "center", paddingTop: "30vh", opacity: 0.5 }}>
-            <img src="/images/SAI.png" alt="SAI" style={{ width: 120, opacity: 0.4 }} />
-            <p style={{ marginTop: 16, fontSize: "0.9rem", color: "var(--gold)" }}>
+          <div
+            style={{
+              textAlign: "center",
+              paddingTop: "30vh",
+              opacity: 0.5,
+            }}
+          >
+            <img
+              src="/images/SAI.png"
+              alt="SAI"
+              style={{ width: 120, opacity: 0.4 }}
+            />
+            <p
+              style={{
+                marginTop: 16,
+                fontSize: "0.9rem",
+                color: "var(--gold)",
+              }}
+            >
               Welcome to Sanctuary.
             </p>
-            <p style={{ marginTop: 8, fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            <p
+              style={{
+                marginTop: 8,
+                fontSize: "0.8rem",
+                color: "var(--text-muted)",
+              }}
+            >
               Your sacred Hermes messenger.
             </p>
           </div>
@@ -369,8 +406,11 @@ export default function App() {
         )}
       </div>
 
-      <ChatInput onSend={handleSend} onFile={handleFile} disabled={isSending} />
-      <BottomNav active="chat" />
+      <ChatInput
+        onSend={handleSend}
+        onFile={handleFile}
+        disabled={isSending}
+      />
     </div>
   );
 }
