@@ -11,6 +11,7 @@ import {
   ChevronDown,
   ChevronUp,
   Activity,
+  Plus,
 } from "lucide-react";
 
 type Role = "user" | "assistant";
@@ -174,11 +175,20 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
 /* ================================================================= */
 /*  UI COMPONENTS                                                      */
 /* ================================================================= */
-function ChatHeader({ onMenu, status }: { onMenu: () => void; status: string }) {
+function ChatHeader({
+  onMenu,
+  status,
+  onNewChat,
+}: {
+  onMenu: () => void;
+  status: string;
+  onNewChat: () => void;
+}) {
   return (
     <header className="chat-header">
       <button className="menu-btn" onClick={onMenu} aria-label="Menu"><Menu size={20} /></button>
       <span className="header-title">SAI Hermes ☤</span>
+      <button className="new-chat-btn" onClick={onNewChat} aria-label="New chat"><Plus size={18} /></button>
       <div className="header-status" data-status={status}>{status}</div>
       <img src="/images/SAI.png" alt="SAI sigil" className="header-sigil" />
     </header>
@@ -395,11 +405,34 @@ export default function App() {
     setMessages((prev) => prev.map((m) => m.id === id ? { ...m, thinkingExpanded: !m.thinkingExpanded } : m));
   }, []);
 
+  const handleNewChat = useCallback(async () => {
+    /* Clear local storage */
+    try { localStorage.removeItem(MSG_KEY); } catch {}
+    setMessages([]);
+    setErrorMsg(null);
+
+    /* Create fresh Hermes session */
+    const gw = gwRef.current;
+    if (gw && gw.state === "open") {
+      try {
+        const res = await gw.request<{ session_id: string }>("session.create");
+        sessionRef.current = res.session_id;
+        saveSession(res.session_id);
+      } catch {
+        /* silent — session will create on next send */
+      }
+    } else {
+      /* If not connected, clear the stored session so next connect creates new */
+      sessionRef.current = null;
+      try { localStorage.removeItem(SESS_KEY); } catch {}
+    }
+  }, []);
+
   /* ---------------------------------------------------------------- */
   return (
     <div className="sanctuary-app">
       <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
-      <ChatHeader onMenu={() => setDrawerOpen(true)} status={connStatus} />
+      <ChatHeader onMenu={() => setDrawerOpen(true)} status={connStatus} onNewChat={handleNewChat} />
 
       {errorMsg && (
         <div className="error-banner">

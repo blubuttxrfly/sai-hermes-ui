@@ -205,6 +205,25 @@ html, body, #root {
   align-items: center;
   justify-content: center;
   color: var(--gold);
+  flex-shrink: 0;
+}
+
+.new-chat-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gold);
+  margin-right: 0.4rem;
+  flex-shrink: 0;
+}
+
+.new-chat-btn:active {
+  background: rgba(255, 214, 107, 0.15);
 }
 
 .header-title {
