@@ -207,21 +207,37 @@ function AssistantBubble({ msg, onToggleThinking }: { msg: Message; onToggleThin
 
   return (
     <div className="msg-row-assistant">
-      <div className="msg-bubble-assistant">
+      <div className="msg-flat-assistant">
         {msg.image && (
           <img src={msg.image} alt="Uploaded" style={{ width: "100%", borderRadius: 10, marginBottom: 8, maxHeight: 200, objectFit: "cover" }} />
         )}
-        {parts.map((part, i) =>
-          part.startsWith("```") && part.endsWith("```")
-            ? <div key={i} className="code-block"><pre><code>{part.slice(3, -3)}</code></pre></div>
-            : <span key={i}>{part}</span>
+
+        {/* Live thinking stream — visible while streaming */}
+        {msg.streaming && hasThinking && (
+          <div className="thinking-live">
+            <div className="thinking-label">
+              <span className="pulse" />
+              <span>Agentic Thinking</span>
+            </div>
+            {msg.thinking}
+          </div>
         )}
 
-        {msg.streaming && !msg.content && (
-          <div className="typing-indicator"><span /><span /><span /></div>
-        )}
+        {/* Main response content */}
+        <div className="assistant-content">
+          {parts.map((part, i) =>
+            part.startsWith("```") && part.endsWith("```")
+              ? <div key={i} className="code-block"><pre><code>{part.slice(3, -3)}</code></pre></div>
+              : <span key={i}>{part}</span>
+          )}
 
-        {/* Thinking / Activity dropdown */}
+          {/* Blue blinking cursor while streaming */}
+          {msg.streaming && (
+            <span className="streaming-cursor" />
+          )}
+        </div>
+
+        {/* Post-completion thinking dropdown */}
         {hasThinking && !msg.streaming && (
           <div className="thinking-bar">
             <button className="thinking-toggle" onClick={() => onToggleThinking(msg.id)}>

@@ -241,20 +241,24 @@ html, body, #root {
 /* ---------- MESSAGES ---------- */
 .messages-scroll {
   flex: 1;
+  min-height: 0; /* critical for flex overflow */
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
+  overscroll-behavior-y: contain;
   padding: 1rem;
-  padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   scroll-behavior: smooth;
 }
 
-/* No bottom nav now — messages fill the space */
+/* User messages keep their bubble */
 .msg-row-user {
   display: flex;
   justify-content: flex-end;
+  padding-left: 2rem;
 }
 
 .msg-bubble-user {
@@ -269,52 +273,76 @@ html, body, #root {
   word-wrap: break-word;
 }
 
+/* ---------- FLAT ASSISTANT LAYOUT ---------- */
 .msg-row-assistant {
   display: flex;
   justify-content: flex-start;
+  width: 100%;
 }
 
-.msg-bubble-assistant {
-  max-width: 85%;
-  padding: 0.75rem 1rem;
-  border-radius: 18px 18px 18px 4px;
-  background: var(--assistant-bubble);
-  border: 1px solid var(--assistant-border);
+.msg-flat-assistant {
+  width: 100%;
+  padding: 0.5rem 0;
+  padding-left: 0.75rem;
+  border-left: 2px solid var(--accent-blue);
   color: var(--text);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.55;
   word-wrap: break-word;
 }
 
-.streaming-block {
-  background: rgba(75, 145, 241, 0.18);
-  border: 1px solid rgba(75, 145, 241, 0.35);
-  border-radius: 10px;
-  padding: 0.6rem 0.8rem;
-  margin: 0.4rem 0;
-  position: relative;
-  overflow: hidden;
+/* ---------- BLUE STREAMING CURSOR ---------- */
+.streaming-cursor {
+  display: inline;
 }
 
-.streaming-block::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(75, 145, 241, 0.15),
-    transparent
-  );
-  animation: shimmer 2s infinite;
+.streaming-cursor::after {
+  content: "█";
+  color: var(--accent-blue);
+  animation: blink-cursor 1s step-end infinite;
+  margin-left: 2px;
 }
 
-@keyframes shimmer {
-  0%   { left: -100%; }
-  100% { left: 100%;  }
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Live thinking stream — indented, muted */
+.thinking-live {
+  padding-left: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-left: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", "SF Mono", "Courier New", monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.thinking-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--accent-blue);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.thinking-label .pulse {
+  width: 6px;
+  height: 6px;
+  background: var(--accent-blue);
+  border-radius: 50%;
+  animation: pulse-dot 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(0.6); opacity: 0.4; }
+  50% { transform: scale(1); opacity: 1; }
 }
 
 /* ---------- INPUT ---------- */
